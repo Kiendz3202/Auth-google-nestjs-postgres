@@ -1,0 +1,59 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Staff } from './staff.entity';
+import { CreateStaffDto } from './staff.dto';
+
+@Injectable()
+export class StaffsService {
+  constructor(
+    @InjectRepository(Staff)
+    private staffsRepository: Repository<Staff>,
+  ) {}
+
+  findAll(): Promise<Staff[]> {
+    return this.staffsRepository.find();
+  }
+
+  findOne(id: string): Promise<Staff | null> {
+    return this.staffsRepository.findOneBy({ id });
+  }
+
+  async createOne(data: CreateStaffDto) {
+    const staff = new Staff();
+
+    const staffData = await this.staffsRepository.findOneBy({
+      email: data?.email,
+    });
+
+    if (staffData) {
+      return {
+        message: 'Login successfully',
+        data: staffData,
+      };
+    } else {
+      staff.email = data.email;
+      staff.firstName = data.firstName;
+      staff.lastName = data.lastName;
+      staff.image = data.image;
+      staff.role = data.role;
+      staff.createAt = new Date();
+      staff.updateAt = new Date();
+
+      const result = await this.staffsRepository.save(staff);
+      return {
+        message: 'User Info from Google',
+        data: result,
+      };
+    }
+  }
+
+  async editOne(id: string, data: any) {
+    await this.staffsRepository.update(id, data);
+    return this.staffsRepository.findOneBy({ id });
+  }
+
+  deleteUserById(id: string) {
+    this.staffsRepository.delete(id);
+  }
+}

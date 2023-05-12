@@ -1,0 +1,62 @@
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Req,
+  Post,
+  Delete,
+  Param,
+  Body,
+  Patch,
+} from '@nestjs/common';
+import { AuthGuard } from 'src/common/middlewares/authorization/authGuard.middleware';
+import { StaffsService } from './staff.service';
+import { Staff } from './staff.entity';
+import { CreateStaffDto } from './staff.dto';
+import { plainToInstance } from 'class-transformer';
+
+@Controller('staff')
+export class StaffsController {
+  constructor(private readonly staffsService: StaffsService) {}
+
+  @Get('list-staffs')
+  async getListStaff() {
+    return await this.staffsService.findAll();
+  }
+
+  @Get(':id')
+  async getDetailStaff(@Param('id') id: string): Promise<Staff | null> {
+    return await this.staffsService.findOne(id);
+  }
+
+  @Post()
+  @UseGuards(AuthGuard)
+  async createStaff(@Body() staff: CreateStaffDto) {
+    // const staffDto = plainToInstance(CreateStaffDto, staff, {
+    //   excludeExtraneousValues: true,
+    // });
+    const staffDto = CreateStaffDto.plainToInstance(staff);
+
+    return await this.staffsService.createOne({ ...staffDto });
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard)
+  async editStafff(@Param('id') id: string, @Body() body: any) {
+    let staffFieldsEdited = plainToInstance(CreateStaffDto, body, {
+      excludeExtraneousValues: true,
+    });
+    Object.keys(staffFieldsEdited).forEach(
+      (key) =>
+        staffFieldsEdited[key] === undefined && delete staffFieldsEdited[key],
+    );
+    staffFieldsEdited = { ...staffFieldsEdited };
+    return await this.staffsService.editOne(id, staffFieldsEdited);
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async deleteStaffById(@Param('id') id: string) {
+    this.staffsService.deleteUserById(id);
+  }
+}
